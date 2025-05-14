@@ -257,113 +257,131 @@
                 e.preventDefault();
                 
                 const file = fileInput.files[0];
+                if (!file) {
+                    alert('Por favor seleccione un archivo');
+                    return;
+                }
+
                 const margen = parseFloat(document.getElementById('margenBDC').value);
+                if (isNaN(margen)) {
+                    alert('Por favor ingrese un margen válido');
+                    return;
+                }
                 
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, {type: 'array'});
-                    
-                    // Procesar el archivo
-                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
-                    
-                    // Encontrar la fila de cabecera
-                    let headerRow = -1;
-                    for (let i = 0; i < jsonData.length; i++) {
-                        const row = jsonData[i];
-                        if (row && row.some(cell => 
-                            typeof cell === 'string' && 
-                            ['sku', 'marca', 'qty', 'price', 'eta', 'moq'].includes(cell.toLowerCase())
-                        )) {
-                            headerRow = i;
-                            break;
-                        }
-                    }
-
-                    if (headerRow === -1) {
-                        alert('No se encontró la fila de cabecera con las columnas requeridas');
-                        return;
-                    }
-
-                    // Mapear columnas
-                    const header = jsonData[headerRow].map(h => h.toLowerCase());
-                    const colMap = {
-                        sku: header.indexOf('sku'),
-                        marca: header.indexOf('marca'),
-                        descripcion: header.indexOf('descripcion') !== -1 ? header.indexOf('descripcion') : header.indexOf('descripción'),
-                        qty: header.indexOf('qty'),
-                        price: header.indexOf('price'),
-                        eta: header.indexOf('eta'),
-                        moq: header.indexOf('moq')
-                    };
-
-                    // Procesar datos
-                    let familiaActual = null;
-                    const processedData = [];
-                    processedData.push(['SKU', 'Marca', 'Descripción', 'Familia', 'Pantalla', 'Memoria', 'Disco', 'Qty', 'Precio', 'ETA', 'MOQ']);
-
-                    // Primero encontramos la primera familia
-                    for (let i = headerRow + 1; i < jsonData.length; i++) {
-                        const row = jsonData[i];
-                        if (esFilaCombinada(row)) {
-                            familiaActual = row[1];  // Usar el valor de la columna B
-                            break;
-                        }
-                    }
-
-                    for (let i = headerRow + 1; i < jsonData.length; i++) {
-                        const row = jsonData[i];
-                        if (!row || row.length === 0) continue;
-
-                        // Detectar si es una fila de grupo (familia)
-                        if (esFilaCombinada(row)) {
-                            familiaActual = row[1];  // Usar el valor de la columna B
-                            continue;
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        
+                        // Procesar el archivo
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+                        
+                        // Encontrar la fila de cabecera
+                        let headerRow = -1;
+                        for (let i = 0; i < jsonData.length; i++) {
+                            const row = jsonData[i];
+                            if (row && row.some(cell => 
+                                typeof cell === 'string' && 
+                                ['sku', 'marca', 'qty', 'price', 'eta', 'moq'].includes(cell.toLowerCase())
+                            )) {
+                                headerRow = i;
+                                break;
+                            }
                         }
 
-                        // Procesar fila de datos
-                        if (row[colMap.price]) {  // Solo verificamos que tenga precio
-                            const descripcion = row[colMap.descripcion] || '';
-                            const pantalla = extraerPantalla(descripcion);
-                            const memoria = extraerValor(descripcion, MEMORIAS);
-                            const disco = extraerValor(descripcion, DISCOS);
-                            const precio = parseFloat(row[colMap.price]) * (1 + margen / 100);
-
-                            processedData.push([
-                                row[colMap.sku] || '-',  // Si no hay SKU, usamos '-'
-                                row[colMap.marca] || '',
-                                descripcion,
-                                familiaActual || '-',
-                                pantalla,
-                                memoria,
-                                disco,
-                                row[colMap.qty] || '',
-                                formatearPrecio(precio),
-                                row[colMap.eta] || '',
-                                row[colMap.moq] !== undefined ? row[colMap.moq] : ''  // Si MOQ es 0, guardamos 0
-                            ]);
+                        if (headerRow === -1) {
+                            alert('No se encontró la fila de cabecera con las columnas requeridas');
+                            return;
                         }
+
+                        // Mapear columnas
+                        const header = jsonData[headerRow].map(h => h.toLowerCase());
+                        const colMap = {
+                            sku: header.indexOf('sku'),
+                            marca: header.indexOf('marca'),
+                            descripcion: header.indexOf('descripcion') !== -1 ? header.indexOf('descripcion') : header.indexOf('descripción'),
+                            qty: header.indexOf('qty'),
+                            price: header.indexOf('price'),
+                            eta: header.indexOf('eta'),
+                            moq: header.indexOf('moq')
+                        };
+
+                        // Procesar datos
+                        let familiaActual = null;
+                        const processedData = [];
+                        processedData.push(['SKU', 'Marca', 'Descripción', 'Familia', 'Pantalla', 'Memoria', 'Disco', 'Qty', 'Precio', 'ETA', 'MOQ']);
+
+                        // Primero encontramos la primera familia
+                        for (let i = headerRow + 1; i < jsonData.length; i++) {
+                            const row = jsonData[i];
+                            if (esFilaCombinada(row)) {
+                                familiaActual = row[1];  // Usar el valor de la columna B
+                                break;
+                            }
+                        }
+
+                        for (let i = headerRow + 1; i < jsonData.length; i++) {
+                            const row = jsonData[i];
+                            if (!row || row.length === 0) continue;
+
+                            // Detectar si es una fila de grupo (familia)
+                            if (esFilaCombinada(row)) {
+                                familiaActual = row[1];  // Usar el valor de la columna B
+                                continue;
+                            }
+
+                            // Procesar fila de datos
+                            if (row[colMap.price]) {  // Solo verificamos que tenga precio
+                                const descripcion = row[colMap.descripcion] || '';
+                                const pantalla = extraerPantalla(descripcion);
+                                const memoria = extraerValor(descripcion, MEMORIAS);
+                                const disco = extraerValor(descripcion, DISCOS);
+                                const precio = parseFloat(row[colMap.price]) * (1 + margen / 100);
+
+                                processedData.push([
+                                    row[colMap.sku] || '-',  // Si no hay SKU, usamos '-'
+                                    row[colMap.marca] || '',
+                                    descripcion,
+                                    familiaActual || '-',
+                                    pantalla,
+                                    memoria,
+                                    disco,
+                                    row[colMap.qty] || '',
+                                    formatearPrecio(precio),
+                                    row[colMap.eta] || '',
+                                    row[colMap.moq] !== undefined ? row[colMap.moq] : ''  // Si MOQ es 0, guardamos 0
+                                ]);
+                            }
+                        }
+                        
+                        // Crear nuevo workbook
+                        processedWorkbook = XLSX.utils.book_new();
+                        const newSheet = XLSX.utils.aoa_to_sheet(processedData);
+                        
+                        // Agregar filtros y estilo a la primera fila
+                        newSheet['!autofilter'] = { ref: `A1:K1` };
+                        
+                        // Establecer estilo en negrita para la primera fila
+                        for (let i = 0; i < 11; i++) {
+                            const cellRef = XLSX.utils.encode_cell({r: 0, c: i});
+                            if (!newSheet[cellRef]) newSheet[cellRef] = {};
+                            newSheet[cellRef].s = { font: { bold: true } };
+                        }
+                        
+                        XLSX.utils.book_append_sheet(processedWorkbook, newSheet, "Notebooks");
+                        
+                        // Mostrar botón de descarga
+                        downloadSection.style.display = 'block';
+                    } catch (error) {
+                        console.error('Error al procesar el archivo:', error);
+                        alert('Error al procesar el archivo. Por favor intente nuevamente.');
                     }
-                    
-                    // Crear nuevo workbook
-                    processedWorkbook = XLSX.utils.book_new();
-                    const newSheet = XLSX.utils.aoa_to_sheet(processedData);
-                    
-                    // Agregar filtros y estilo a la primera fila
-                    newSheet['!autofilter'] = { ref: `A1:K1` };
-                    
-                    // Establecer estilo en negrita para la primera fila
-                    for (let i = 0; i < 11; i++) {
-                        const cellRef = XLSX.utils.encode_cell({r: 0, c: i});
-                        if (!newSheet[cellRef]) newSheet[cellRef] = {};
-                        newSheet[cellRef].s = { font: { bold: true } };
-                    }
-                    
-                    XLSX.utils.book_append_sheet(processedWorkbook, newSheet, "Notebooks");
-                    
-                    // Mostrar botón de descarga
-                    downloadSection.style.display = 'block';
+                };
+                
+                reader.onerror = function() {
+                    alert('Error al leer el archivo');
                 };
                 
                 reader.readAsArrayBuffer(file);
@@ -371,8 +389,15 @@
 
             downloadButton.addEventListener('click', function() {
                 if (processedWorkbook) {
-                    const fecha = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
-                    XLSX.writeFile(processedWorkbook, `Notebooks BDC ${fecha}.xlsx`);
+                    try {
+                        const fecha = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
+                        XLSX.writeFile(processedWorkbook, `Notebooks BDC ${fecha}.xlsx`);
+                    } catch (error) {
+                        console.error('Error al descargar el archivo:', error);
+                        alert('Error al descargar el archivo. Por favor intente nuevamente.');
+                    }
+                } else {
+                    alert('No hay archivo procesado para descargar');
                 }
             });
         });
