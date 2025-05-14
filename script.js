@@ -11,7 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('.file-input-label').textContent = fileName;
     });
 
-    // Manejar el envío del formulario
+    let generatedWorkbook = null;
+
     uploadForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -21,34 +22,63 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Verificar que el archivo sea de Excel
         if (!file.name.match(/\.(xlsx|xls)$/)) {
             alert('Por favor, selecciona un archivo Excel válido (.xlsx o .xls)');
             return;
         }
 
-        // Aquí irá la lógica de procesamiento del archivo
-        // Por ahora, solo simularemos el procesamiento
         processButton.disabled = true;
         processButton.textContent = 'Procesando...';
+        downloadSection.style.display = 'none';
+        generatedWorkbook = null;
 
         try {
-            // Simular un procesamiento
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            // Mostrar el botón de descarga
+            // Leer el archivo Excel subido
+            const data = await file.arrayBuffer();
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const originalSheet = workbook.Sheets[firstSheetName];
+            const originalData = XLSX.utils.sheet_to_json(originalSheet, { header: 1 });
+
+            // Crear nuevo libro y hoja
+            const newHeader = [
+                'SKU', 'Marca', 'Descripción', 'Familia', 'Pantalla', 'Memoria', 'Disco', 'Qty', 'Price', 'ETA', 'MOQ'
+            ];
+            const newData = [newHeader];
+
+            // Copiar los datos del archivo original (ignorando la cabecera original)
+            for (let i = 1; i < originalData.length; i++) {
+                newData.push(originalData[i]);
+            }
+
+            const newSheet = XLSX.utils.aoa_to_sheet(newData);
+            const newWorkbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(newWorkbook, newSheet, 'Notebooks');
+
+            generatedWorkbook = newWorkbook;
             downloadSection.style.display = 'block';
         } catch (error) {
-            alert('Error al procesar el archivo');
+            alert('Error al procesar el archivo: ' + error.message);
         } finally {
             processButton.disabled = false;
             processButton.textContent = 'Procesar';
         }
     });
 
-    // Manejar la descarga
     downloadButton.addEventListener('click', () => {
-        // Aquí irá la lógica de descarga
-        alert('Funcionalidad de descarga pendiente de implementar');
+        if (!generatedWorkbook) {
+            alert('No hay archivo generado para descargar.');
+            return;
+        }
+        const wbout = XLSX.write(generatedWorkbook, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([wbout], { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Notebooks.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     });
 }); 

@@ -83,4 +83,26 @@ input[type="file"] {
 
 #downloadButton:hover {
     background-color: #218838;
+}
+
+.margen-bdc-container {
+    margin-bottom: 1rem;
+    font-family: inherit;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.margen-bdc-container label {
+    margin-right: 10px;
+    font-weight: 500;
+}
+
+.margen-bdc-container input[type="number"] {
+    padding: 0.5rem;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    font-size: 1rem;
+    width: 100px;
+    font-family: inherit;
 } 
