@@ -321,7 +321,23 @@
 
                     // Configurar estilos
                     const headerStyle = {
-                        font: { bold: true, size: 12 },
+                        font: { bold: true, size: 12, color: { argb: 'FFFFFFFF' } },  // Texto blanco
+                        fill: {
+                            type: 'pattern',
+                            pattern: 'solid',
+                            fgColor: { argb: 'FF000000' }  // Fondo negro
+                        },
+                        border: {
+                            top: { style: 'thin' },
+                            left: { style: 'thin' },
+                            bottom: { style: 'thin' },
+                            right: { style: 'thin' }
+                        },
+                        alignment: { vertical: 'middle', horizontal: 'center' }
+                    };
+
+                    // Estilo para columnas centradas
+                    const centerStyle = {
                         fill: {
                             type: 'pattern',
                             pattern: 'solid',
@@ -336,7 +352,8 @@
                         alignment: { vertical: 'middle', horizontal: 'center' }
                     };
 
-                    const cellStyle = {
+                    // Estilo para columna de precio (alineación derecha)
+                    const priceStyle = {
                         fill: {
                             type: 'pattern',
                             pattern: 'solid',
@@ -348,7 +365,23 @@
                             bottom: { style: 'thin' },
                             right: { style: 'thin' }
                         },
-                        alignment: { vertical: 'middle' }
+                        alignment: { vertical: 'middle', horizontal: 'right' }
+                    };
+
+                    // Estilo para columna de descripción (alineación izquierda)
+                    const descriptionStyle = {
+                        fill: {
+                            type: 'pattern',
+                            pattern: 'solid',
+                            fgColor: { argb: 'FFFFFFFF' }  // Fondo blanco
+                        },
+                        border: {
+                            top: { style: 'thin' },
+                            left: { style: 'thin' },
+                            bottom: { style: 'thin' },
+                            right: { style: 'thin' }
+                        },
+                        alignment: { vertical: 'middle', horizontal: 'left' }
                     };
 
                     // Agregar encabezados
@@ -372,11 +405,6 @@
                         }
                     }
 
-                    // Si no encontramos familia inicial, usar 'Deal of the day'
-                    if (!familiaActual) {
-                        familiaActual = 'Deal of the day';
-                    }
-
                     for (let i = headerRow + 1; i < jsonData.length; i++) {
                         const row = jsonData[i];
                         if (!row || row.length === 0) continue;
@@ -397,19 +425,34 @@
                                 row[colMap.sku] || '-',
                                 row[colMap.marca] || '',
                                 descripcion,
-                                familiaActual || 'Deal of the day',
+                                familiaActual || '-',
                                 pantalla,
                                 memoria,
                                 disco,
                                 row[colMap.qty] || '',
-                                formatearPrecio(precio),
+                                `$${formatearPrecio(precio)}`,
                                 row[colMap.eta] || '',
                                 row[colMap.moq] !== undefined ? row[colMap.moq] : ''
                             ]);
 
-                            // Aplicar estilo a las celdas
-                            newRow.eachCell((cell) => {
-                                cell.style = cellStyle;
+                            // Aplicar estilos específicos a cada columna
+                            newRow.eachCell((cell, colNumber) => {
+                                // Columnas centradas: SKU, Familia, Pantalla, Memoria, Disco, QTY, ETA, MOQ
+                                if ([1, 4, 5, 6, 7, 8, 10, 11].includes(colNumber)) {
+                                    cell.style = centerStyle;
+                                }
+                                // Columna de precio (alineación derecha)
+                                else if (colNumber === 9) {
+                                    cell.style = priceStyle;
+                                }
+                                // Columna de descripción (alineación izquierda)
+                                else if (colNumber === 3) {
+                                    cell.style = descriptionStyle;
+                                }
+                                // Columna de marca (centrada)
+                                else if (colNumber === 2) {
+                                    cell.style = centerStyle;
+                                }
                             });
                         }
                     }
