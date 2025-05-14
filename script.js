@@ -110,30 +110,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Generar Pantalla según la descripción
                 let pantalla = '';
-                const pantallas = ['14"', '11.6"', '15.6"', '16"', '14.1"', '13.3"', '14.5"', '10.9"'];
+                const pantallas = [
+                    { pattern: '11.6', value: '11.6"' },
+                    { pattern: '14.1', value: '14.1"' },
+                    { pattern: '13"', value: '13"' },
+                    { pattern: '15.6', value: '15.6"' },
+                    { pattern: '16 inch', value: '16"' },
+                    { pattern: '13.3 inch', value: '13.3"' },
+                    { pattern: '13IN', value: '13"' }
+                ];
                 for (const p of pantallas) {
-                    if (descripcion.includes(p)) {
-                        pantalla = p;
+                    if (descripcion.includes(p.pattern)) {
+                        pantalla = p.value;
                         break;
                     }
                 }
 
                 // Generar Memoria según la descripción
                 let memoria = '';
-                const memorias = ['4GB', '8GB', '12GB', '16GB', '32GB', '24GB'];
+                const memorias = [
+                    { pattern: '8G', value: '8GB' },
+                    { pattern: '4GB', value: '4GB' },
+                    { pattern: '12GB', value: '12GB' },
+                    { pattern: '16GB', value: '16GB' },
+                    { pattern: '32GB', value: '32GB' },
+                    { pattern: '24GB', value: '24GB' }
+                ];
                 for (const m of memorias) {
-                    if (descripcion.includes(m)) {
-                        memoria = m;
+                    if (descripcion.includes(m.pattern)) {
+                        memoria = m.value;
                         break;
                     }
                 }
 
                 // Generar Disco según la descripción
                 let disco = '';
-                const discos = ['64GB', '128GB', '256GB', '127GB', '512GB', '1TB'];
+                const discos = [
+                    { pattern: '512G', value: '512GB' },
+                    { pattern: '128G', value: '128GB' },
+                    { pattern: '64GB', value: '64GB' },
+                    { pattern: '256GB', value: '256GB' },
+                    { pattern: '127GB', value: '127GB' },
+                    { pattern: '1TB', value: '1TB' }
+                ];
                 for (const d of discos) {
-                    if (descripcion.includes(d)) {
-                        disco = d;
+                    if (descripcion.includes(d.pattern)) {
+                        disco = d.value;
                         break;
                     }
                 }
@@ -163,6 +185,49 @@ document.addEventListener('DOMContentLoaded', () => {
             const newWorkbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(newWorkbook, newSheet, 'Notebooks');
 
+            // Aplicar formato al Excel generado
+            const range = XLSX.utils.decode_range(newSheet['!ref']);
+            for (let R = range.s.r; R <= range.e.r; R++) {
+                for (let C = range.s.c; C <= range.e.c; C++) {
+                    const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (!newSheet[cellAddress]) newSheet[cellAddress] = {};
+                    newSheet[cellAddress].s = {
+                        font: { name: 'Verdana', sz: 11 },
+                        fill: { fgColor: { rgb: 'FFFFFF' } },
+                        border: {
+                            top: { style: 'thin' },
+                            bottom: { style: 'thin' },
+                            left: { style: 'thin' },
+                            right: { style: 'thin' }
+                        }
+                    };
+                }
+            }
+            // Aplicar formato a la cabecera
+            for (let C = range.s.c; C <= range.e.c; C++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
+                if (!newSheet[cellAddress]) newSheet[cellAddress] = {};
+                newSheet[cellAddress].s = {
+                    font: { name: 'Verdana', sz: 11, bold: true, color: { rgb: 'FFFFFF' } },
+                    fill: { fgColor: { rgb: '000000' } },
+                    border: {
+                        top: { style: 'thin' },
+                        bottom: { style: 'thin' },
+                        left: { style: 'thin' },
+                        right: { style: 'thin' }
+                    }
+                };
+            }
+            // Aplicar borde exterior grueso
+            for (let C = range.s.c; C <= range.e.c; C++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
+                if (!newSheet[cellAddress]) newSheet[cellAddress] = {};
+                newSheet[cellAddress].s.border.top = { style: 'thick' };
+                newSheet[cellAddress].s.border.bottom = { style: 'thick' };
+                newSheet[cellAddress].s.border.left = { style: 'thick' };
+                newSheet[cellAddress].s.border.right = { style: 'thick' };
+            }
+
             generatedWorkbook = newWorkbook;
             downloadSection.style.display = 'block';
         } catch (error) {
@@ -178,12 +243,17 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('No hay archivo generado para descargar.');
             return;
         }
+        const today = new Date();
+        const dd = String(today.getDate()).padStart(2, '0');
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const yy = String(today.getFullYear()).slice(-2);
+        const fileName = `Notebooks BDC ${dd}-${mm}-${yy}.xlsx`;
         const wbout = XLSX.write(generatedWorkbook, { bookType: 'xlsx', type: 'array' });
         const blob = new Blob([wbout], { type: 'application/octet-stream' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'Notebooks BDC.xlsx';
+        a.download = fileName;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
