@@ -234,6 +234,20 @@
                     const processedData = [];
                     processedData.push(['SKU', 'Marca', 'Descripción', 'Familia', 'Pantalla', 'Memoria', 'Disco', 'Qty', 'Precio', 'ETA', 'MOQ']);
 
+                    // Primero encontramos la primera familia
+                    for (let i = headerRow + 1; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if (row && row.length > 0 && row[0] && FAMILIAS.includes(row[0])) {
+                            familiaActual = row[0];
+                            break;
+                        }
+                    }
+
+                    // Si no encontramos ninguna familia, usamos '-'
+                    if (!familiaActual) {
+                        familiaActual = '-';
+                    }
+
                     for (let i = headerRow + 1; i < jsonData.length; i++) {
                         const row = jsonData[i];
                         if (!row || row.length === 0) continue;
@@ -253,17 +267,17 @@
                             const precio = parseFloat(row[colMap.price]) * (1 + margen / 100);
 
                             processedData.push([
-                                row[colMap.sku] || '',
+                                row[colMap.sku] || '-',  // Si no hay SKU, usamos '-'
                                 row[colMap.marca] || '',
                                 descripcion,
-                                familiaActual || '-',  // Si no hay familia actual, usamos '-'
+                                familiaActual,
                                 pantalla,
                                 memoria,
                                 disco,
                                 row[colMap.qty] || '',
                                 precio,
                                 row[colMap.eta] || '',
-                                row[colMap.moq] || ''
+                                row[colMap.moq] !== undefined ? row[colMap.moq] : ''  // Si MOQ es 0, guardamos 0
                             ]);
                         }
                     }
