@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Procesador de Archivos Excel de BDC</title>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -117,7 +118,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Procesador de Archivos Excel</h1>
+        <h1>Procesador de Archivos Excel de BDC</h1>
         <div class="upload-section">
             <form id="uploadForm">
                 <div class="file-input-container">
@@ -138,7 +139,6 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script>
         const FAMILIAS = [
             'Intel Celeron',
@@ -175,10 +175,9 @@
             ['256GB', '256GB'], ['127GB', '127GB'], ['1TB', '1TB']
         ];
 
-        let colMap = null;  // Variable global para colMap
+        let colMap = null;
 
         function esFilaCombinada(row) {
-            // Una fila está combinada si no tiene precio pero tiene texto en la columna B (índice 1)
             return row && row.length > 1 && row[1] && !row[colMap.price];
         }
 
@@ -187,33 +186,6 @@
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });
-        }
-
-        function extraerValor(descripcion, opciones, defaultVal = '-') {
-            if (opciones === MEMORIAS) {
-                // Para memorias, buscamos todas las coincidencias y tomamos la más grande
-                let maxMemoria = null;
-                let maxSize = 0;
-                
-                for (let [pattern, value] of opciones) {
-                    if (descripcion.includes(pattern)) {
-                        const size = parseInt(value);
-                        if (size > maxSize) {
-                            maxSize = size;
-                            maxMemoria = value;
-                        }
-                    }
-                }
-                return maxMemoria || defaultVal;
-            } else {
-                // Para otros valores, comportamiento normal
-                for (let [pattern, value] of opciones) {
-                    if (descripcion.includes(pattern)) {
-                        return value;
-                    }
-                }
-                return defaultVal;
-            }
         }
 
         function extraerPantalla(descripcion) {
@@ -242,6 +214,31 @@
             return '-';
         }
 
+        function extraerValor(descripcion, opciones, defaultVal = '-') {
+            if (opciones === MEMORIAS) {
+                let maxMemoria = null;
+                let maxSize = 0;
+                
+                for (let [pattern, value] of opciones) {
+                    if (descripcion.includes(pattern)) {
+                        const size = parseInt(value);
+                        if (size > maxSize) {
+                            maxSize = size;
+                            maxMemoria = value;
+                        }
+                    }
+                }
+                return maxMemoria || defaultVal;
+            } else {
+                for (let [pattern, value] of opciones) {
+                    if (descripcion.includes(pattern)) {
+                        return value;
+                    }
+                }
+                return defaultVal;
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const fileInput = document.getElementById('fileInput');
             const uploadForm = document.getElementById('uploadForm');
@@ -255,7 +252,7 @@
                 fileInputLabel.textContent = fileName;
             });
 
-            uploadForm.addEventListener('submit', function(e) {
+            uploadForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
                 const file = fileInput.files[0];
@@ -269,159 +266,172 @@
                     alert('Por favor ingrese un margen válido');
                     return;
                 }
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        console.log('Iniciando procesamiento del archivo...');
-                        const data = new Uint8Array(e.target.result);
-                        console.log('Archivo leído correctamente');
-                        
-                        const workbook = XLSX.read(data, {type: 'array'});
-                        console.log('Workbook creado correctamente');
-                        
-                        // Procesar el archivo
-                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                        console.log('Primera hoja obtenida:', workbook.SheetNames[0]);
-                        
-                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
-                        console.log('Datos convertidos a JSON');
-                        
-                        // Encontrar la fila de cabecera
-                        let headerRow = -1;
-                        for (let i = 0; i < jsonData.length; i++) {
-                            const row = jsonData[i];
-                            if (row && row.some(cell => 
-                                typeof cell === 'string' && 
-                                ['sku', 'marca', 'qty', 'price', 'eta', 'moq'].includes(cell.toLowerCase())
-                            )) {
-                                headerRow = i;
-                                break;
-                            }
+
+                try {
+                    const workbook = new ExcelJS.Workbook();
+                    await workbook.xlsx.load(await file.arrayBuffer());
+                    
+                    const worksheet = workbook.getWorksheet(1);
+                    const jsonData = [];
+                    
+                    worksheet.eachRow((row, rowNumber) => {
+                        jsonData.push(row.values);
+                    });
+
+                    // Encontrar la fila de cabecera
+                    let headerRow = -1;
+                    for (let i = 1; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if (row && row.some(cell => 
+                            typeof cell === 'string' && 
+                            ['sku', 'marca', 'qty', 'price', 'eta', 'moq'].includes(cell.toLowerCase())
+                        )) {
+                            headerRow = i;
+                            break;
                         }
-
-                        console.log('Fila de cabecera encontrada en:', headerRow);
-
-                        if (headerRow === -1) {
-                            throw new Error('No se encontró la fila de cabecera con las columnas requeridas');
-                        }
-
-                        // Mapear columnas
-                        const header = jsonData[headerRow].map(h => h.toLowerCase());
-                        console.log('Cabeceras encontradas:', header);
-                        
-                        colMap = {
-                            sku: header.indexOf('sku'),
-                            marca: header.indexOf('marca'),
-                            descripcion: header.indexOf('descripcion') !== -1 ? header.indexOf('descripcion') : header.indexOf('descripción'),
-                            qty: header.indexOf('qty'),
-                            price: header.indexOf('price'),
-                            eta: header.indexOf('eta'),
-                            moq: header.indexOf('moq')
-                        };
-
-                        console.log('Columnas mapeadas:', colMap);
-
-                        // Verificar que todas las columnas requeridas estén presentes
-                        const columnasRequeridas = ['sku', 'marca', 'price', 'qty', 'eta', 'moq'];
-                        const columnasFaltantes = columnasRequeridas.filter(col => colMap[col] === -1);
-                        
-                        if (columnasFaltantes.length > 0) {
-                            throw new Error(`Faltan las siguientes columnas requeridas: ${columnasFaltantes.join(', ')}`);
-                        }
-
-                        // Procesar datos
-                        let familiaActual = null;
-                        const processedData = [];
-                        processedData.push(['SKU', 'Marca', 'Descripción', 'Familia', 'Pantalla', 'Memoria', 'Disco', 'Qty', 'Precio', 'ETA', 'MOQ']);
-
-                        console.log('Iniciando procesamiento de filas...');
-
-                        // Primero encontramos la primera familia
-                        for (let i = headerRow + 1; i < jsonData.length; i++) {
-                            const row = jsonData[i];
-                            if (esFilaCombinada(row)) {
-                                familiaActual = row[1];  // Usar el valor de la columna B
-                                console.log('Primera familia encontrada:', familiaActual);
-                                break;
-                            }
-                        }
-
-                        for (let i = headerRow + 1; i < jsonData.length; i++) {
-                            const row = jsonData[i];
-                            if (!row || row.length === 0) continue;
-
-                            // Detectar si es una fila de grupo (familia)
-                            if (esFilaCombinada(row)) {
-                                familiaActual = row[1];  // Usar el valor de la columna B
-                                console.log('Nueva familia encontrada:', familiaActual);
-                                continue;
-                            }
-
-                            // Procesar fila de datos
-                            if (row[colMap.price]) {  // Solo verificamos que tenga precio
-                                const descripcion = row[colMap.descripcion] || '';
-                                const pantalla = extraerPantalla(descripcion);
-                                const memoria = extraerValor(descripcion, MEMORIAS);
-                                const disco = extraerValor(descripcion, DISCOS);
-                                const precio = parseFloat(row[colMap.price]) * (1 + margen / 100);
-
-                                processedData.push([
-                                    row[colMap.sku] || '-',  // Si no hay SKU, usamos '-'
-                                    row[colMap.marca] || '',
-                                    descripcion,
-                                    familiaActual || '-',
-                                    pantalla,
-                                    memoria,
-                                    disco,
-                                    row[colMap.qty] || '',
-                                    formatearPrecio(precio),
-                                    row[colMap.eta] || '',
-                                    row[colMap.moq] !== undefined ? row[colMap.moq] : ''  // Si MOQ es 0, guardamos 0
-                                ]);
-                            }
-                        }
-                        
-                        console.log('Datos procesados correctamente');
-
-                        // Crear nuevo workbook
-                        processedWorkbook = XLSX.utils.book_new();
-                        const newSheet = XLSX.utils.aoa_to_sheet(processedData);
-                        
-                        // Agregar filtros y estilo a la primera fila
-                        newSheet['!autofilter'] = { ref: `A1:K1` };
-                        
-                        // Establecer estilo en negrita para la primera fila
-                        for (let i = 0; i < 11; i++) {
-                            const cellRef = XLSX.utils.encode_cell({r: 0, c: i});
-                            if (!newSheet[cellRef]) newSheet[cellRef] = {};
-                            newSheet[cellRef].s = { font: { bold: true } };
-                        }
-                        
-                        XLSX.utils.book_append_sheet(processedWorkbook, newSheet, "Notebooks");
-                        console.log('Workbook final creado correctamente');
-                        
-                        // Mostrar botón de descarga
-                        downloadSection.style.display = 'block';
-                        console.log('Procesamiento completado exitosamente');
-                    } catch (error) {
-                        console.error('Error detallado:', error);
-                        alert(`Error al procesar el archivo: ${error.message}`);
                     }
-                };
-                
-                reader.onerror = function() {
-                    alert('Error al leer el archivo');
-                };
-                
-                reader.readAsArrayBuffer(file);
+
+                    if (headerRow === -1) {
+                        throw new Error('No se encontró la fila de cabecera con las columnas requeridas');
+                    }
+
+                    // Mapear columnas
+                    const header = jsonData[headerRow].map(h => h.toLowerCase());
+                    colMap = {
+                        sku: header.indexOf('sku'),
+                        marca: header.indexOf('marca'),
+                        descripcion: header.indexOf('descripcion') !== -1 ? header.indexOf('descripcion') : header.indexOf('descripción'),
+                        qty: header.indexOf('qty'),
+                        price: header.indexOf('price'),
+                        eta: header.indexOf('eta'),
+                        moq: header.indexOf('moq')
+                    };
+
+                    // Verificar columnas requeridas
+                    const columnasRequeridas = ['sku', 'marca', 'price', 'qty', 'eta', 'moq'];
+                    const columnasFaltantes = columnasRequeridas.filter(col => colMap[col] === -1);
+                    
+                    if (columnasFaltantes.length > 0) {
+                        throw new Error(`Faltan las siguientes columnas requeridas: ${columnasFaltantes.join(', ')}`);
+                    }
+
+                    // Crear nuevo workbook
+                    const newWorkbook = new ExcelJS.Workbook();
+                    const newSheet = newWorkbook.addWorksheet('Notebooks');
+
+                    // Configurar estilos
+                    const headerStyle = {
+                        font: { bold: true, size: 12 },
+                        fill: {
+                            type: 'pattern',
+                            pattern: 'solid',
+                            fgColor: { argb: 'FFE0E0E0' }
+                        },
+                        border: {
+                            top: { style: 'thin' },
+                            left: { style: 'thin' },
+                            bottom: { style: 'thin' },
+                            right: { style: 'thin' }
+                        },
+                        alignment: { vertical: 'middle', horizontal: 'center' }
+                    };
+
+                    // Agregar encabezados
+                    const headers = ['SKU', 'Marca', 'Descripción', 'Familia', 'Pantalla', 'Memoria', 'Disco', 'Qty', 'Precio', 'ETA', 'MOQ'];
+                    newSheet.addRow(headers);
+                    
+                    // Aplicar estilo a los encabezados
+                    newSheet.getRow(1).eachCell((cell) => {
+                        cell.style = headerStyle;
+                    });
+
+                    // Procesar datos
+                    let familiaActual = null;
+
+                    // Primero encontramos la primera familia
+                    for (let i = headerRow + 1; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if (esFilaCombinada(row)) {
+                            familiaActual = row[1];
+                            break;
+                        }
+                    }
+
+                    for (let i = headerRow + 1; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if (!row || row.length === 0) continue;
+
+                        if (esFilaCombinada(row)) {
+                            familiaActual = row[1];
+                            continue;
+                        }
+
+                        if (row[colMap.price]) {
+                            const descripcion = row[colMap.descripcion] || '';
+                            const pantalla = extraerPantalla(descripcion);
+                            const memoria = extraerValor(descripcion, MEMORIAS);
+                            const disco = extraerValor(descripcion, DISCOS);
+                            const precio = parseFloat(row[colMap.price]) * (1 + margen / 100);
+
+                            const newRow = newSheet.addRow([
+                                row[colMap.sku] || '-',
+                                row[colMap.marca] || '',
+                                descripcion,
+                                familiaActual || '-',
+                                pantalla,
+                                memoria,
+                                disco,
+                                row[colMap.qty] || '',
+                                formatearPrecio(precio),
+                                row[colMap.eta] || '',
+                                row[colMap.moq] !== undefined ? row[colMap.moq] : ''
+                            ]);
+
+                            // Aplicar estilo a las celdas
+                            newRow.eachCell((cell) => {
+                                cell.border = {
+                                    top: { style: 'thin' },
+                                    left: { style: 'thin' },
+                                    bottom: { style: 'thin' },
+                                    right: { style: 'thin' }
+                                };
+                                cell.alignment = { vertical: 'middle' };
+                            });
+                        }
+                    }
+
+                    // Ajustar ancho de columnas
+                    newSheet.columns.forEach(column => {
+                        column.width = 15;
+                    });
+
+                    // Agregar filtros
+                    newSheet.autoFilter = {
+                        from: { row: 1, column: 1 },
+                        to: { row: 1, column: headers.length }
+                    };
+
+                    processedWorkbook = newWorkbook;
+                    downloadSection.style.display = 'block';
+
+                } catch (error) {
+                    console.error('Error detallado:', error);
+                    alert(`Error al procesar el archivo: ${error.message}`);
+                }
             });
 
-            downloadButton.addEventListener('click', function() {
+            downloadButton.addEventListener('click', async function() {
                 if (processedWorkbook) {
                     try {
                         const fecha = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
-                        XLSX.writeFile(processedWorkbook, `Notebooks BDC ${fecha}.xlsx`);
+                        const buffer = await processedWorkbook.xlsx.writeBuffer();
+                        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `Notebooks BDC ${fecha}.xlsx`;
+                        a.click();
+                        window.URL.revokeObjectURL(url);
                     } catch (error) {
                         console.error('Error al descargar el archivo:', error);
                         alert('Error al descargar el archivo. Por favor intente nuevamente.');
