@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procesador de Archivos Excel</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Procesador de Archivos Excel</h1>
+        <div class="upload-section">
+            <form id="uploadForm">
+                <div class="file-input-container">
+                    <input type="file" id="fileInput" accept=".xlsx, .xls" required>
+                    <label for="fileInput" class="file-input-label">
+                        Seleccionar archivo Excel
+                    </label>
+                </div>
+                <button type="submit" id="processButton" class="button">Procesar</button>
+            </form>
+        </div>
+        <div id="downloadSection" class="download-section" style="display: none;">
+            <button id="downloadButton" class="button">Descargar</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html> 
