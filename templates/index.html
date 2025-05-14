@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Procesador de archivos Excel de BDC</title>
-    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>Procesador de archivos Excel de BDC</h1>
+        <h1>Procesador de Archivos Excel</h1>
         <div class="upload-section">
             <form id="uploadForm" method="POST" enctype="multipart/form-data">
                 <div class="file-input-container">
@@ -25,11 +25,7 @@
             </form>
         </div>
     </div>
-    <script>
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const fileName = e.target.files[0]?.name || 'Seleccionar archivo Excel';
-            document.querySelector('.file-input-label').textContent = fileName;
-        });
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html> 
