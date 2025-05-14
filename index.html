@@ -230,7 +230,7 @@
                     };
 
                     // Procesar datos
-                    let familiaActual = '-';
+                    let familiaActual = null;
                     const processedData = [];
                     processedData.push(['SKU', 'Marca', 'Descripción', 'Familia', 'Pantalla', 'Memoria', 'Disco', 'Qty', 'Precio', 'ETA', 'MOQ']);
 
@@ -245,7 +245,7 @@
                         }
 
                         // Procesar fila de datos
-                        if (row[colMap.sku] && row[colMap.marca] && row[colMap.qty] && row[colMap.price] && row[colMap.eta] && row[colMap.moq]) {
+                        if (row[colMap.price]) {  // Solo verificamos que tenga precio
                             const descripcion = row[colMap.descripcion] || '';
                             const pantalla = extraerValor(descripcion, PANTALLAS);
                             const memoria = extraerValor(descripcion, MEMORIAS);
@@ -253,17 +253,17 @@
                             const precio = parseFloat(row[colMap.price]) * (1 + margen / 100);
 
                             processedData.push([
-                                row[colMap.sku],
-                                row[colMap.marca],
+                                row[colMap.sku] || '',
+                                row[colMap.marca] || '',
                                 descripcion,
-                                familiaActual,
+                                familiaActual || '-',  // Si no hay familia actual, usamos '-'
                                 pantalla,
                                 memoria,
                                 disco,
-                                row[colMap.qty],
+                                row[colMap.qty] || '',
                                 precio,
-                                row[colMap.eta],
-                                row[colMap.moq]
+                                row[colMap.eta] || '',
+                                row[colMap.moq] || ''
                             ]);
                         }
                     }
