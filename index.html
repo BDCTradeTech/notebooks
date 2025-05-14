@@ -271,12 +271,19 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     try {
+                        console.log('Iniciando procesamiento del archivo...');
                         const data = new Uint8Array(e.target.result);
+                        console.log('Archivo leído correctamente');
+                        
                         const workbook = XLSX.read(data, {type: 'array'});
+                        console.log('Workbook creado correctamente');
                         
                         // Procesar el archivo
                         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        console.log('Primera hoja obtenida:', workbook.SheetNames[0]);
+                        
                         const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+                        console.log('Datos convertidos a JSON');
                         
                         // Encontrar la fila de cabecera
                         let headerRow = -1;
@@ -291,13 +298,16 @@
                             }
                         }
 
+                        console.log('Fila de cabecera encontrada en:', headerRow);
+
                         if (headerRow === -1) {
-                            alert('No se encontró la fila de cabecera con las columnas requeridas');
-                            return;
+                            throw new Error('No se encontró la fila de cabecera con las columnas requeridas');
                         }
 
                         // Mapear columnas
                         const header = jsonData[headerRow].map(h => h.toLowerCase());
+                        console.log('Cabeceras encontradas:', header);
+                        
                         const colMap = {
                             sku: header.indexOf('sku'),
                             marca: header.indexOf('marca'),
@@ -308,16 +318,29 @@
                             moq: header.indexOf('moq')
                         };
 
+                        console.log('Columnas mapeadas:', colMap);
+
+                        // Verificar que todas las columnas requeridas estén presentes
+                        const columnasRequeridas = ['sku', 'marca', 'price', 'qty', 'eta', 'moq'];
+                        const columnasFaltantes = columnasRequeridas.filter(col => colMap[col] === -1);
+                        
+                        if (columnasFaltantes.length > 0) {
+                            throw new Error(`Faltan las siguientes columnas requeridas: ${columnasFaltantes.join(', ')}`);
+                        }
+
                         // Procesar datos
                         let familiaActual = null;
                         const processedData = [];
                         processedData.push(['SKU', 'Marca', 'Descripción', 'Familia', 'Pantalla', 'Memoria', 'Disco', 'Qty', 'Precio', 'ETA', 'MOQ']);
+
+                        console.log('Iniciando procesamiento de filas...');
 
                         // Primero encontramos la primera familia
                         for (let i = headerRow + 1; i < jsonData.length; i++) {
                             const row = jsonData[i];
                             if (esFilaCombinada(row)) {
                                 familiaActual = row[1];  // Usar el valor de la columna B
+                                console.log('Primera familia encontrada:', familiaActual);
                                 break;
                             }
                         }
@@ -329,6 +352,7 @@
                             // Detectar si es una fila de grupo (familia)
                             if (esFilaCombinada(row)) {
                                 familiaActual = row[1];  // Usar el valor de la columna B
+                                console.log('Nueva familia encontrada:', familiaActual);
                                 continue;
                             }
 
@@ -356,6 +380,8 @@
                             }
                         }
                         
+                        console.log('Datos procesados correctamente');
+
                         // Crear nuevo workbook
                         processedWorkbook = XLSX.utils.book_new();
                         const newSheet = XLSX.utils.aoa_to_sheet(processedData);
@@ -371,12 +397,14 @@
                         }
                         
                         XLSX.utils.book_append_sheet(processedWorkbook, newSheet, "Notebooks");
+                        console.log('Workbook final creado correctamente');
                         
                         // Mostrar botón de descarga
                         downloadSection.style.display = 'block';
+                        console.log('Procesamiento completado exitosamente');
                     } catch (error) {
-                        console.error('Error al procesar el archivo:', error);
-                        alert('Error al procesar el archivo. Por favor intente nuevamente.');
+                        console.error('Error detallado:', error);
+                        alert(`Error al procesar el archivo: ${error.message}`);
                     }
                 };
                 
