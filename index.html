@@ -80,6 +80,18 @@
             background-color: #0056b3;
         }
 
+        .download-section {
+            margin-top: 1rem;
+        }
+
+        #downloadButton {
+            background-color: #28a745;
+        }
+
+        #downloadButton:hover {
+            background-color: #218838;
+        }
+
         .margen-bdc-container {
             margin-bottom: 1rem;
             font-family: inherit;
@@ -101,6 +113,28 @@
             width: 100px;
             font-family: inherit;
         }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -121,6 +155,10 @@
                 <button type="submit" id="processButton" class="button">Procesar</button>
             </form>
         </div>
+        <div class="loading" id="loadingIndicator"></div>
+        <div id="downloadSection" class="download-section" style="display: none;">
+            <button id="downloadButton" class="button">Descargar</button>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -129,6 +167,10 @@
             const fileInput = document.getElementById('fileInput');
             const uploadForm = document.getElementById('uploadForm');
             const fileInputLabel = document.querySelector('.file-input-label');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const downloadSection = document.getElementById('downloadSection');
+            const downloadButton = document.getElementById('downloadButton');
+            let processedWorkbook = null;
 
             fileInput.addEventListener('change', function(e) {
                 const fileName = e.target.files[0]?.name || 'Seleccionar archivo Excel';
@@ -141,37 +183,62 @@
                 const file = fileInput.files[0];
                 const margen = parseFloat(document.getElementById('margenBDC').value);
                 
+                if (!file) {
+                    alert('Por favor, seleccione un archivo Excel');
+                    return;
+                }
+
+                loadingIndicator.style.display = 'block';
+                downloadSection.style.display = 'none';
+                
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, {type: 'array'});
-                    
-                    // Procesar el archivo
-                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
-                    
-                    // Aplicar margen a los precios
-                    const processedData = jsonData.map(row => {
-                        if (Array.isArray(row) && row.length > 0) {
-                            // Asumiendo que el precio está en la columna 8 (índice 7)
-                            if (typeof row[7] === 'number') {
-                                row[7] = row[7] * (1 + margen / 100);
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        
+                        // Procesar el archivo
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+                        
+                        // Aplicar margen a los precios
+                        const processedData = jsonData.map(row => {
+                            if (Array.isArray(row) && row.length > 0) {
+                                // Asumiendo que el precio está en la columna 8 (índice 7)
+                                if (typeof row[7] === 'number') {
+                                    row[7] = row[7] * (1 + margen / 100);
+                                }
                             }
-                        }
-                        return row;
-                    });
-                    
-                    // Crear nuevo workbook
-                    const newWorkbook = XLSX.utils.book_new();
-                    const newSheet = XLSX.utils.aoa_to_sheet(processedData);
-                    XLSX.utils.book_append_sheet(newWorkbook, newSheet, "Notebooks");
-                    
-                    // Generar archivo
-                    const fecha = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
-                    XLSX.writeFile(newWorkbook, `Notebooks BDC ${fecha}.xlsx`);
+                            return row;
+                        });
+                        
+                        // Crear nuevo workbook
+                        processedWorkbook = XLSX.utils.book_new();
+                        const newSheet = XLSX.utils.aoa_to_sheet(processedData);
+                        XLSX.utils.book_append_sheet(processedWorkbook, newSheet, "Notebooks");
+                        
+                        loadingIndicator.style.display = 'none';
+                        downloadSection.style.display = 'block';
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Error al procesar el archivo. Por favor, intente nuevamente.');
+                        loadingIndicator.style.display = 'none';
+                    }
+                };
+                
+                reader.onerror = function() {
+                    alert('Error al leer el archivo');
+                    loadingIndicator.style.display = 'none';
                 };
                 
                 reader.readAsArrayBuffer(file);
+            });
+
+            downloadButton.addEventListener('click', function() {
+                if (processedWorkbook) {
+                    const fecha = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
+                    XLSX.writeFile(processedWorkbook, `Notebooks BDC ${fecha}.xlsx`);
+                }
             });
         });
     </script>
