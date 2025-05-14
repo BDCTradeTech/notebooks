@@ -161,19 +161,26 @@
 
         const PANTALLAS = [
             ['10.9', '10.9"'], ['11.6', '11.6"'], ['14', '14"'], ['14.1', '14.1"'], 
-            ['13"', '13"'], ['15.6', '15.6"'], ['16', '16"'], ['16 inch', '16"'], 
-            ['13.3 inch', '13.3"'], ['13IN', '13"']
+            ['13"', '13"'], ['13.3"', '13.3"'], ['13-inch', '13"'], ['15.6', '15.6"'], 
+            ['16', '16"'], ['16 inch', '16"'], ['13.3 inch', '13.3"'], ['13IN', '13"']
         ];
 
         const MEMORIAS = [
             ['32GB', '32GB'], ['24GB', '24GB'], ['16GB', '16GB'], ['12GB', '12GB'],
-            ['8GB', '8GB'], ['4GB', '4GB']
+            ['8GB', '8GB'], ['8G', '8GB'], ['4GB', '4GB']
         ];
 
         const DISCOS = [
             ['512 GB', '512GB'], ['512G', '512GB'], ['128G', '128GB'], ['64GB', '64GB'], 
             ['256GB', '256GB'], ['127GB', '127GB'], ['1TB', '1TB']
         ];
+
+        function formatearPrecio(precio) {
+            return precio.toLocaleString('es-ES', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
 
         function extraerValor(descripcion, opciones, defaultVal = '-') {
             if (opciones === MEMORIAS) {
@@ -263,7 +270,7 @@
                     // Procesar datos
                     let familiaActual = null;
                     const processedData = [];
-                    processedData.push(['SKU', 'Marca', 'Descripción', 'Familia', 'Pantalla', 'Memoria', 'Disco', 'Qty', 'Precio', 'ETA', 'MOQ']);
+                    processedData.push(['SKU', 'Marca', 'Descripción', 'Familia', 'Pantalla', 'Memoria', 'Disco', 'Qty', 'Precio', 'ETA', 'MOQ', 'Filtro']);
 
                     // Primero encontramos la primera familia
                     for (let i = headerRow + 1; i < jsonData.length; i++) {
@@ -306,9 +313,10 @@
                                 memoria,
                                 disco,
                                 row[colMap.qty] || '',
-                                precio,
+                                formatearPrecio(precio),
                                 row[colMap.eta] || '',
-                                row[colMap.moq] !== undefined ? row[colMap.moq] : ''  // Si MOQ es 0, guardamos 0
+                                row[colMap.moq] !== undefined ? row[colMap.moq] : '',  // Si MOQ es 0, guardamos 0
+                                ''  // Columna Filtro vacía
                             ]);
                         }
                     }
