@@ -40,15 +40,78 @@ document.addEventListener('DOMContentLoaded', () => {
             const originalSheet = workbook.Sheets[firstSheetName];
             const originalData = XLSX.utils.sheet_to_json(originalSheet, { header: 1 });
 
+            // Buscar la fila de cabecera correcta
+            let headerRowIndex = -1;
+            let headerMap = {};
+            for (let i = 0; i < originalData.length; i++) {
+                const row = originalData[i].map(cell => (cell || '').toString().trim().toLowerCase());
+                if (
+                    row.includes('sku') &&
+                    row.includes('marca') &&
+                    (row.includes('descripcion') || row.includes('descripción')) &&
+                    row.includes('qty') &&
+                    row.includes('price') &&
+                    row.includes('eta') &&
+                    row.includes('moq')
+                ) {
+                    headerRowIndex = i;
+                    // Mapear nombre de columna a índice
+                    row.forEach((cell, idx) => {
+                        headerMap[cell] = idx;
+                    });
+                    break;
+                }
+            }
+            if (headerRowIndex === -1) {
+                throw new Error('No se encontró la fila de cabecera esperada en el archivo.');
+            }
+
             // Crear nuevo libro y hoja
             const newHeader = [
                 'SKU', 'Marca', 'Descripción', 'Familia', 'Pantalla', 'Memoria', 'Disco', 'Qty', 'Price', 'ETA', 'MOQ'
             ];
             const newData = [newHeader];
 
-            // Copiar los datos del archivo original (ignorando la cabecera original)
-            for (let i = 1; i < originalData.length; i++) {
-                newData.push(originalData[i]);
+            // Copiar solo filas válidas (ignorando títulos de grupo y filas vacías)
+            for (let i = headerRowIndex + 1; i < originalData.length; i++) {
+                const row = originalData[i];
+                // Considerar fila válida si tiene SKU, Marca, Qty, Price, ETA y MOQ
+                const sku = row[headerMap['sku']] || '';
+                const marca = row[headerMap['marca']] || '';
+                const qty = row[headerMap['qty']] || '';
+                const price = row[headerMap['price']] || '';
+                const eta = row[headerMap['eta']] || '';
+                const moq = row[headerMap['moq']] || '';
+                if (
+                    sku.toString().trim() === '' ||
+                    marca.toString().trim() === '' ||
+                    qty.toString().trim() === '' ||
+                    price.toString().trim() === '' ||
+                    eta.toString().trim() === '' ||
+                    moq.toString().trim() === ''
+                ) {
+                    continue; // Saltar filas no válidas
+                }
+                // Mapear columnas según la cabecera encontrada
+                const descripcionIdx = headerMap['descripcion'] !== undefined ? headerMap['descripcion'] : headerMap['descripción'];
+                const familiaIdx = headerMap['familia'];
+                const pantallaIdx = headerMap['pantalla'];
+                const memoriaIdx = headerMap['memoria'];
+                const discoIdx = headerMap['disco'];
+                const newRow = [
+                    row[headerMap['sku']] || '',
+                    row[headerMap['marca']] || '',
+                    row[descripcionIdx] || '',
+                    familiaIdx !== undefined ? row[familiaIdx] || '' : '',
+                    pantallaIdx !== undefined ? row[pantallaIdx] || '' : '',
+                    memoriaIdx !== undefined ? row[memoriaIdx] || '' : '',
+                    discoIdx !== undefined ? row[discoIdx] || '' : '',
+                    row[headerMap['qty']] || '',
+                    row[headerMap['price']] || '',
+                    row[headerMap['eta']] || '',
+                    row[headerMap['moq']] || ''
+                ];
+                newData.push(newRow);
             }
 
             const newSheet = XLSX.utils.aoa_to_sheet(newData);
@@ -75,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'Notebooks.xlsx';
+        a.download = 'Notebooks BDC.xlsx';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
