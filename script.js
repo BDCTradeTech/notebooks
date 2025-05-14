@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Crear nuevo libro y hoja
             const newHeader = [
-                'SKU', 'Marca', 'Descripción', 'Familia', 'Pantalla', 'Memoria', 'Disco', 'Qty', 'Price', 'ETA', 'MOQ'
+                'SKU', 'Marca', 'Descripción', 'Familia', 'Pantalla', 'Memoria', 'Disco', 'Qty', 'Precio', 'ETA', 'MOQ'
             ];
             const newData = [newHeader];
 
@@ -94,20 +94,65 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 // Mapear columnas según la cabecera encontrada
                 const descripcionIdx = headerMap['descripcion'] !== undefined ? headerMap['descripcion'] : headerMap['descripción'];
-                const familiaIdx = headerMap['familia'];
-                const pantallaIdx = headerMap['pantalla'];
-                const memoriaIdx = headerMap['memoria'];
-                const discoIdx = headerMap['disco'];
+                const descripcion = row[descripcionIdx] || '';
+
+                // Generar Familia según la descripción
+                let familia = '';
+                const familias = [
+                    'Intel Celeron', 'Intel Pentium', 'Intel Core 5', 'Intel Core 7', 'Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'Intel Core i9', 'Intel Core Ultra5', 'Intel Core Ultra7', 'Intel Core Ultra9', 'AMD Ryzen 3', 'AMD Ryzen 5', 'AMD Ryzen 7', 'AMD Ryzen 9', 'Apple'
+                ];
+                for (const f of familias) {
+                    if (descripcion.toLowerCase().includes(f.toLowerCase())) {
+                        familia = f;
+                        break;
+                    }
+                }
+
+                // Generar Pantalla según la descripción
+                let pantalla = '';
+                const pantallas = ['14"', '11.6"', '15.6"', '16"', '14.1"', '13.3"', '14.5"', '10.9"'];
+                for (const p of pantallas) {
+                    if (descripcion.includes(p)) {
+                        pantalla = p;
+                        break;
+                    }
+                }
+
+                // Generar Memoria según la descripción
+                let memoria = '';
+                const memorias = ['4GB', '8GB', '12GB', '16GB', '32GB', '24GB'];
+                for (const m of memorias) {
+                    if (descripcion.includes(m)) {
+                        memoria = m;
+                        break;
+                    }
+                }
+
+                // Generar Disco según la descripción
+                let disco = '';
+                const discos = ['64GB', '128GB', '256GB', '127GB', '512GB', '1TB'];
+                for (const d of discos) {
+                    if (descripcion.includes(d)) {
+                        disco = d;
+                        break;
+                    }
+                }
+
+                // Aplicar margen BDC al precio
+                const margenBDC = parseFloat(document.getElementById('margenBDC').value) || 5.0;
+                const precioOriginal = parseFloat(price) || 0;
+                const precioConMargen = precioOriginal * (1 + margenBDC / 100);
+
                 const newRow = [
                     row[headerMap['sku']] || '',
                     row[headerMap['marca']] || '',
-                    row[descripcionIdx] || '',
-                    familiaIdx !== undefined ? row[familiaIdx] || '' : '',
-                    pantallaIdx !== undefined ? row[pantallaIdx] || '' : '',
-                    memoriaIdx !== undefined ? row[memoriaIdx] || '' : '',
-                    discoIdx !== undefined ? row[discoIdx] || '' : '',
+                    descripcion,
+                    familia,
+                    pantalla,
+                    memoria,
+                    disco,
                     row[headerMap['qty']] || '',
-                    row[headerMap['price']] || '',
+                    precioConMargen.toFixed(2),
                     row[headerMap['eta']] || '',
                     row[headerMap['moq']] || ''
                 ];
