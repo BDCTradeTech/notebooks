@@ -17,6 +17,10 @@
                         Seleccionar archivo Excel
                     </label>
                 </div>
+                <div class="margen-bdc-container">
+                    <label for="margenBDC">Margen BDC:</label>
+                    <input type="number" id="margenBDC" step="0.1" value="5.0" min="0" required style="width: 80px; margin-left: 10px;">
+                </div>
                 <button type="submit" id="processButton" class="button">Procesar</button>
             </form>
         </div>
@@ -24,6 +28,7 @@
             <button id="downloadButton" class="button">Descargar</button>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html> 
