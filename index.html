@@ -161,27 +161,45 @@
 
         const PANTALLAS = [
             ['10.9', '10.9"'], ['11.6', '11.6"'], ['14', '14"'], ['14.1', '14.1"'], 
-            ['13"', '13"'], ['15.6', '15.6"'], ['16 inch', '16"'], ['13.3 inch', '13.3"'], 
-            ['13IN', '13"']
+            ['13"', '13"'], ['15.6', '15.6"'], ['16', '16"'], ['16 inch', '16"'], 
+            ['13.3 inch', '13.3"'], ['13IN', '13"']
         ];
 
         const MEMORIAS = [
-            ['8G', '8GB'], ['4GB', '4GB'], ['12GB', '12GB'], ['16GB', '16GB'], 
-            ['32GB', '32GB'], ['24GB', '24GB']
+            ['32GB', '32GB'], ['24GB', '24GB'], ['16GB', '16GB'], ['12GB', '12GB'],
+            ['8GB', '8GB'], ['4GB', '4GB']
         ];
 
         const DISCOS = [
-            ['512G', '512GB'], ['128G', '128GB'], ['64GB', '64GB'], ['256GB', '256GB'], 
-            ['127GB', '127GB'], ['1TB', '1TB']
+            ['512 GB', '512GB'], ['512G', '512GB'], ['128G', '128GB'], ['64GB', '64GB'], 
+            ['256GB', '256GB'], ['127GB', '127GB'], ['1TB', '1TB']
         ];
 
         function extraerValor(descripcion, opciones, defaultVal = '-') {
-            for (let [pattern, value] of opciones) {
-                if (descripcion.includes(pattern)) {
-                    return value;
+            if (opciones === MEMORIAS) {
+                // Para memorias, buscamos todas las coincidencias y tomamos la más grande
+                let maxMemoria = null;
+                let maxSize = 0;
+                
+                for (let [pattern, value] of opciones) {
+                    if (descripcion.includes(pattern)) {
+                        const size = parseInt(value);
+                        if (size > maxSize) {
+                            maxSize = size;
+                            maxMemoria = value;
+                        }
+                    }
                 }
+                return maxMemoria || defaultVal;
+            } else {
+                // Para otros valores, comportamiento normal
+                for (let [pattern, value] of opciones) {
+                    if (descripcion.includes(pattern)) {
+                        return value;
+                    }
+                }
+                return defaultVal;
             }
-            return defaultVal;
         }
 
         document.addEventListener('DOMContentLoaded', function() {
