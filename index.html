@@ -236,8 +236,8 @@
         }
 
         function esFilaCombinada(row) {
-            // Una fila está combinada si no tiene precio pero tiene texto en la primera columna
-            return row && row.length > 0 && row[0] && !row[colMap.price];
+            // Una fila está combinada si no tiene precio pero tiene texto en la columna B (índice 1)
+            return row && row.length > 1 && row[1] && !row[colMap.price];
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -307,7 +307,7 @@
                     for (let i = headerRow + 1; i < jsonData.length; i++) {
                         const row = jsonData[i];
                         if (esFilaCombinada(row)) {
-                            familiaActual = row[0];
+                            familiaActual = row[1];  // Usar el valor de la columna B
                             break;
                         }
                     }
@@ -318,7 +318,7 @@
 
                         // Detectar si es una fila de grupo (familia)
                         if (esFilaCombinada(row)) {
-                            familiaActual = row[0];
+                            familiaActual = row[1];  // Usar el valor de la columna B
                             continue;
                         }
 
@@ -350,8 +350,15 @@
                     processedWorkbook = XLSX.utils.book_new();
                     const newSheet = XLSX.utils.aoa_to_sheet(processedData);
                     
-                    // Agregar filtros a la primera fila
+                    // Agregar filtros y estilo a la primera fila
                     newSheet['!autofilter'] = { ref: `A1:K1` };
+                    
+                    // Establecer estilo en negrita para la primera fila
+                    for (let i = 0; i < 11; i++) {
+                        const cellRef = XLSX.utils.encode_cell({r: 0, c: i});
+                        if (!newSheet[cellRef]) newSheet[cellRef] = {};
+                        newSheet[cellRef].s = { font: { bold: true } };
+                    }
                     
                     XLSX.utils.book_append_sheet(processedWorkbook, newSheet, "Notebooks");
                     
