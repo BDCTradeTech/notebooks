@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procesador de archivos Excel de BDC</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Procesador de archivos Excel de BDC</h1>
+        <div class="upload-section">
+            <form id="uploadForm" method="POST" enctype="multipart/form-data">
+                <div class="file-input-container">
+                    <input type="file" id="fileInput" name="file" accept=".xlsx, .xls" required>
+                    <label for="fileInput" class="file-input-label">
+                        Seleccionar archivo Excel
+                    </label>
+                </div>
+                <div class="margen-bdc-container">
+                    <label for="margenBDC">Margen BDC:</label>
+                    <input type="number" id="margenBDC" name="margenBDC" step="0.1" value="5.0" min="0" required style="width: 80px; margin-left: 10px;">
+                </div>
+                <button type="submit" id="processButton" class="button">Procesar</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name || 'Seleccionar archivo Excel';
+            document.querySelector('.file-input-label').textContent = fileName;
+        });
+    </script>
+</body>
+</html> 
