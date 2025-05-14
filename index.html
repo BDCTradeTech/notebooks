@@ -325,7 +325,7 @@
                         fill: {
                             type: 'pattern',
                             pattern: 'solid',
-                            fgColor: { argb: 'FFE0E0E0' }
+                            fgColor: { argb: 'FFFFFFFF' }  // Fondo blanco
                         },
                         border: {
                             top: { style: 'thin' },
@@ -334,6 +334,21 @@
                             right: { style: 'thin' }
                         },
                         alignment: { vertical: 'middle', horizontal: 'center' }
+                    };
+
+                    const cellStyle = {
+                        fill: {
+                            type: 'pattern',
+                            pattern: 'solid',
+                            fgColor: { argb: 'FFFFFFFF' }  // Fondo blanco
+                        },
+                        border: {
+                            top: { style: 'thin' },
+                            left: { style: 'thin' },
+                            bottom: { style: 'thin' },
+                            right: { style: 'thin' }
+                        },
+                        alignment: { vertical: 'middle' }
                     };
 
                     // Agregar encabezados
@@ -357,6 +372,11 @@
                         }
                     }
 
+                    // Si no encontramos familia inicial, usar 'Deal of the day'
+                    if (!familiaActual) {
+                        familiaActual = 'Deal of the day';
+                    }
+
                     for (let i = headerRow + 1; i < jsonData.length; i++) {
                         const row = jsonData[i];
                         if (!row || row.length === 0) continue;
@@ -377,7 +397,7 @@
                                 row[colMap.sku] || '-',
                                 row[colMap.marca] || '',
                                 descripcion,
-                                familiaActual || '-',
+                                familiaActual || 'Deal of the day',
                                 pantalla,
                                 memoria,
                                 disco,
@@ -389,13 +409,7 @@
 
                             // Aplicar estilo a las celdas
                             newRow.eachCell((cell) => {
-                                cell.border = {
-                                    top: { style: 'thin' },
-                                    left: { style: 'thin' },
-                                    bottom: { style: 'thin' },
-                                    right: { style: 'thin' }
-                                };
-                                cell.alignment = { vertical: 'middle' };
+                                cell.style = cellStyle;
                             });
                         }
                     }
