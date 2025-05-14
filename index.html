@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Procesador de archivos Excel de BDC</title>
+    <title>Procesador de Archivos Excel de BDC</title>
     <style>
         * {
             margin: 0;
@@ -141,15 +141,28 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script>
         const FAMILIAS = [
-            'Intel Celeron', 'Intel Pentium', 'Intel Core 5', 'Intel Core 7', 'Intel Core i3', 
-            'Intel Core i5', 'Intel Core i7', 'Intel Core i9', 'Intel Core Ultra5', 
-            'Intel Core Ultra7', 'Intel Core Ultra9', 'AMD Ryzen 3', 'AMD Ryzen 5', 
-            'AMD Ryzen 7', 'AMD Ryzen 9', 'Apple', 'Deal of the day'
+            'Intel Celeron',
+            'Intel Pentium',
+            'Intel Core 5',
+            'Intel Core 7',
+            'Intel Core i3',
+            'Intel Core i5',
+            'Intel Core i7',
+            'Intel Core i9',
+            'Intel Core Ultra5',
+            'Intel Core Ultra7',
+            'Intel Core Ultra9',
+            'AMD Ryzen 3',
+            'AMD Ryzen 5',
+            'AMD Ryzen 7',
+            'AMD Ryzen 9',
+            'Apple'
         ];
 
         const PANTALLAS = [
-            ['11.6', '11.6"'], ['14.1', '14.1"'], ['13"', '13"'], ['15.6', '15.6"'], 
-            ['16 inch', '16"'], ['13.3 inch', '13.3"'], ['13IN', '13"']
+            ['10.9', '10.9"'], ['11.6', '11.6"'], ['14', '14"'], ['14.1', '14.1"'], 
+            ['13"', '13"'], ['15.6', '15.6"'], ['16 inch', '16"'], ['13.3 inch', '13.3"'], 
+            ['13IN', '13"']
         ];
 
         const MEMORIAS = [
@@ -243,9 +256,9 @@
                         }
                     }
 
-                    // Si no encontramos ninguna familia, usamos '-'
+                    // Si no encontramos ninguna familia, usamos la primera de la lista
                     if (!familiaActual) {
-                        familiaActual = '-';
+                        familiaActual = FAMILIAS[0];
                     }
 
                     for (let i = headerRow + 1; i < jsonData.length; i++) {
