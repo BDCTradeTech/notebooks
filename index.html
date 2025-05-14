@@ -80,6 +80,18 @@
             background-color: #0056b3;
         }
 
+        .download-section {
+            margin-top: 1rem;
+        }
+
+        #downloadButton {
+            background-color: #28a745;
+        }
+
+        #downloadButton:hover {
+            background-color: #218838;
+        }
+
         .margen-bdc-container {
             margin-bottom: 1rem;
             font-family: inherit;
@@ -121,6 +133,9 @@
                 <button type="submit" id="processButton" class="button">Procesar</button>
             </form>
         </div>
+        <div id="downloadSection" class="download-section" style="display: none;">
+            <button id="downloadButton" class="button">Descargar</button>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -129,7 +144,7 @@
             'Intel Celeron', 'Intel Pentium', 'Intel Core 5', 'Intel Core 7', 'Intel Core i3', 
             'Intel Core i5', 'Intel Core i7', 'Intel Core i9', 'Intel Core Ultra5', 
             'Intel Core Ultra7', 'Intel Core Ultra9', 'AMD Ryzen 3', 'AMD Ryzen 5', 
-            'AMD Ryzen 7', 'AMD Ryzen 9', 'Apple'
+            'AMD Ryzen 7', 'AMD Ryzen 9', 'Apple', 'Deal of the day'
         ];
 
         const PANTALLAS = [
@@ -160,6 +175,9 @@
             const fileInput = document.getElementById('fileInput');
             const uploadForm = document.getElementById('uploadForm');
             const fileInputLabel = document.querySelector('.file-input-label');
+            const downloadSection = document.getElementById('downloadSection');
+            const downloadButton = document.getElementById('downloadButton');
+            let processedWorkbook = null;
 
             fileInput.addEventListener('change', function(e) {
                 const fileName = e.target.files[0]?.name || 'Seleccionar archivo Excel';
@@ -221,7 +239,7 @@
                         if (!row || row.length === 0) continue;
 
                         // Detectar si es una fila de grupo (familia)
-                        if (FAMILIAS.includes(row[0])) {
+                        if (row[0] && FAMILIAS.includes(row[0])) {
                             familiaActual = row[0];
                             continue;
                         }
@@ -251,16 +269,22 @@
                     }
                     
                     // Crear nuevo workbook
-                    const newWorkbook = XLSX.utils.book_new();
+                    processedWorkbook = XLSX.utils.book_new();
                     const newSheet = XLSX.utils.aoa_to_sheet(processedData);
-                    XLSX.utils.book_append_sheet(newWorkbook, newSheet, "Notebooks");
+                    XLSX.utils.book_append_sheet(processedWorkbook, newSheet, "Notebooks");
                     
-                    // Generar archivo
-                    const fecha = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
-                    XLSX.writeFile(newWorkbook, `Notebooks BDC ${fecha}.xlsx`);
+                    // Mostrar botón de descarga
+                    downloadSection.style.display = 'block';
                 };
                 
                 reader.readAsArrayBuffer(file);
+            });
+
+            downloadButton.addEventListener('click', function() {
+                if (processedWorkbook) {
+                    const fecha = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
+                    XLSX.writeFile(processedWorkbook, `Notebooks BDC ${fecha}.xlsx`);
+                }
             });
         });
     </script>
