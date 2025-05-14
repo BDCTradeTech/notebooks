@@ -209,6 +209,37 @@
             }
         }
 
+        function extraerPantalla(descripcion) {
+            // Primero buscar en los patrones definidos
+            for (let [pattern, value] of PANTALLAS) {
+                if (descripcion.includes(pattern)) {
+                    return value;
+                }
+            }
+            
+            // Si no encuentra, buscar patrones como "11-", "14-", etc.
+            const patrones = [
+                ['11-', '11"'],
+                ['14-', '14"'],
+                ['15-', '15"'],
+                ['13-', '13"'],
+                ['16-', '16"']
+            ];
+            
+            for (let [pattern, value] of patrones) {
+                if (descripcion.includes(pattern)) {
+                    return value;
+                }
+            }
+            
+            return '-';
+        }
+
+        function esFilaCombinada(row) {
+            // Una fila está combinada si no tiene precio pero tiene texto en la primera columna
+            return row && row.length > 0 && row[0] && !row[colMap.price];
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const fileInput = document.getElementById('fileInput');
             const uploadForm = document.getElementById('uploadForm');
@@ -270,20 +301,15 @@
                     // Procesar datos
                     let familiaActual = null;
                     const processedData = [];
-                    processedData.push(['SKU', 'Marca', 'Descripción', 'Familia', 'Pantalla', 'Memoria', 'Disco', 'Qty', 'Precio', 'ETA', 'MOQ', 'Filtro']);
+                    processedData.push(['SKU', 'Marca', 'Descripción', 'Familia', 'Pantalla', 'Memoria', 'Disco', 'Qty', 'Precio', 'ETA', 'MOQ']);
 
                     // Primero encontramos la primera familia
                     for (let i = headerRow + 1; i < jsonData.length; i++) {
                         const row = jsonData[i];
-                        if (row && row.length > 0 && row[0] && FAMILIAS.includes(row[0])) {
+                        if (esFilaCombinada(row)) {
                             familiaActual = row[0];
                             break;
                         }
-                    }
-
-                    // Si no encontramos ninguna familia, usamos la primera de la lista
-                    if (!familiaActual) {
-                        familiaActual = FAMILIAS[0];
                     }
 
                     for (let i = headerRow + 1; i < jsonData.length; i++) {
@@ -291,7 +317,7 @@
                         if (!row || row.length === 0) continue;
 
                         // Detectar si es una fila de grupo (familia)
-                        if (row[0] && FAMILIAS.includes(row[0])) {
+                        if (esFilaCombinada(row)) {
                             familiaActual = row[0];
                             continue;
                         }
@@ -299,7 +325,7 @@
                         // Procesar fila de datos
                         if (row[colMap.price]) {  // Solo verificamos que tenga precio
                             const descripcion = row[colMap.descripcion] || '';
-                            const pantalla = extraerValor(descripcion, PANTALLAS);
+                            const pantalla = extraerPantalla(descripcion);
                             const memoria = extraerValor(descripcion, MEMORIAS);
                             const disco = extraerValor(descripcion, DISCOS);
                             const precio = parseFloat(row[colMap.price]) * (1 + margen / 100);
@@ -308,15 +334,14 @@
                                 row[colMap.sku] || '-',  // Si no hay SKU, usamos '-'
                                 row[colMap.marca] || '',
                                 descripcion,
-                                familiaActual,
+                                familiaActual || '-',
                                 pantalla,
                                 memoria,
                                 disco,
                                 row[colMap.qty] || '',
                                 formatearPrecio(precio),
                                 row[colMap.eta] || '',
-                                row[colMap.moq] !== undefined ? row[colMap.moq] : '',  // Si MOQ es 0, guardamos 0
-                                ''  // Columna Filtro vacía
+                                row[colMap.moq] !== undefined ? row[colMap.moq] : ''  // Si MOQ es 0, guardamos 0
                             ]);
                         }
                     }
@@ -324,6 +349,10 @@
                     // Crear nuevo workbook
                     processedWorkbook = XLSX.utils.book_new();
                     const newSheet = XLSX.utils.aoa_to_sheet(processedData);
+                    
+                    // Agregar filtros a la primera fila
+                    newSheet['!autofilter'] = { ref: `A1:K1` };
+                    
                     XLSX.utils.book_append_sheet(processedWorkbook, newSheet, "Notebooks");
                     
                     // Mostrar botón de descarga
