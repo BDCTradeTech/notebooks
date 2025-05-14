@@ -175,6 +175,13 @@
             ['256GB', '256GB'], ['127GB', '127GB'], ['1TB', '1TB']
         ];
 
+        let colMap = null;  // Variable global para colMap
+
+        function esFilaCombinada(row) {
+            // Una fila está combinada si no tiene precio pero tiene texto en la columna B (índice 1)
+            return row && row.length > 1 && row[1] && !row[colMap.price];
+        }
+
         function formatearPrecio(precio) {
             return precio.toLocaleString('es-ES', {
                 minimumFractionDigits: 2,
@@ -233,11 +240,6 @@
             }
             
             return '-';
-        }
-
-        function esFilaCombinada(row) {
-            // Una fila está combinada si no tiene precio pero tiene texto en la columna B (índice 1)
-            return row && row.length > 1 && row[1] && !row[colMap.price];
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -308,7 +310,7 @@
                         const header = jsonData[headerRow].map(h => h.toLowerCase());
                         console.log('Cabeceras encontradas:', header);
                         
-                        const colMap = {
+                        colMap = {
                             sku: header.indexOf('sku'),
                             marca: header.indexOf('marca'),
                             descripcion: header.indexOf('descripcion') !== -1 ? header.indexOf('descripcion') : header.indexOf('descripción'),
