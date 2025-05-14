@@ -1,0 +1,15 @@
+   # Crear el directorio
+   mkdir static
+   
+   # Mover los archivos al directorio
+   mv styles.css static/
+   mv script.js static/
+   
+   # Agregar los cambios
+   git add .
+   
+   # Hacer commit
+   git commit -m "Reorganizar archivos en subdirectorios"
+   
+   # Subir los cambios
+   git push origin main
