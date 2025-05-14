@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const descripcion = row[descripcionIdx] || '';
 
                 // Generar Familia según la descripción
-                let familia = '';
+                let familia = '-';
                 const familias = [
                     'Intel Celeron', 'Intel Pentium', 'Intel Core 5', 'Intel Core 7', 'Intel Core i3', 'Intel Core i5', 'Intel Core i7', 'Intel Core i9', 'Intel Core Ultra5', 'Intel Core Ultra7', 'Intel Core Ultra9', 'AMD Ryzen 3', 'AMD Ryzen 5', 'AMD Ryzen 7', 'AMD Ryzen 9', 'Apple'
                 ];
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // Generar Pantalla según la descripción
-                let pantalla = '';
+                let pantalla = '-';
                 const pantallas = [
                     { pattern: '11.6', value: '11.6"' },
                     { pattern: '14.1', value: '14.1"' },
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // Generar Memoria según la descripción
-                let memoria = '';
+                let memoria = '-';
                 const memorias = [
                     { pattern: '8G', value: '8GB' },
                     { pattern: '4GB', value: '4GB' },
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // Generar Disco según la descripción
-                let disco = '';
+                let disco = '-';
                 const discos = [
                     { pattern: '512G', value: '512GB' },
                     { pattern: '128G', value: '128GB' },
@@ -226,6 +226,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 newSheet[cellAddress].s.border.bottom = { style: 'thick' };
                 newSheet[cellAddress].s.border.left = { style: 'thick' };
                 newSheet[cellAddress].s.border.right = { style: 'thick' };
+            }
+
+            // Formatear la columna Precio como moneda
+            for (let R = 1; R <= range.e.r; R++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: R, c: 8 }); // Columna Precio
+                if (!newSheet[cellAddress]) newSheet[cellAddress] = {};
+                newSheet[cellAddress].s.numFmt = '"$"#,##0.00';
             }
 
             generatedWorkbook = newWorkbook;
