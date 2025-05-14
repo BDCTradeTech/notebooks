@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procesador de archivos Excel de BDC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .upload-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .file-input-container {
+            margin-bottom: 1rem;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-input-label:hover {
+            background-color: #e9ecef;
+            border-color: #adb5bd;
+        }
+
+        .button {
+            display: block;
+            width: 100%;
+            padding: 0.8rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        .margen-bdc-container {
+            margin-bottom: 1rem;
+            font-family: inherit;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .margen-bdc-container label {
+            margin-right: 10px;
+            font-weight: 500;
+        }
+
+        .margen-bdc-container input[type="number"] {
+            padding: 0.5rem;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            font-size: 1rem;
+            width: 100px;
+            font-family: inherit;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Procesador de Archivos Excel</h1>
+        <div class="upload-section">
+            <form id="uploadForm">
+                <div class="file-input-container">
+                    <input type="file" id="fileInput" accept=".xlsx, .xls" required>
+                    <label for="fileInput" class="file-input-label">
+                        Seleccionar archivo Excel
+                    </label>
+                </div>
+                <div class="margen-bdc-container">
+                    <label for="margenBDC">Margen BDC:</label>
+                    <input type="number" id="margenBDC" step="0.1" value="5.0" min="0" required style="width: 80px; margin-left: 10px;">
+                </div>
+                <button type="submit" id="processButton" class="button">Procesar</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadForm = document.getElementById('uploadForm');
+            const fileInputLabel = document.querySelector('.file-input-label');
+
+            fileInput.addEventListener('change', function(e) {
+                const fileName = e.target.files[0]?.name || 'Seleccionar archivo Excel';
+                fileInputLabel.textContent = fileName;
+            });
+
+            uploadForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const file = fileInput.files[0];
+                const margen = parseFloat(document.getElementById('margenBDC').value);
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    
+                    // Procesar el archivo
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+                    
+                    // Aplicar margen a los precios
+                    const processedData = jsonData.map(row => {
+                        if (Array.isArray(row) && row.length > 0) {
+                            // Asumiendo que el precio está en la columna 8 (índice 7)
+                            if (typeof row[7] === 'number') {
+                                row[7] = row[7] * (1 + margen / 100);
+                            }
+                        }
+                        return row;
+                    });
+                    
+                    // Crear nuevo workbook
+                    const newWorkbook = XLSX.utils.book_new();
+                    const newSheet = XLSX.utils.aoa_to_sheet(processedData);
+                    XLSX.utils.book_append_sheet(newWorkbook, newSheet, "Notebooks");
+                    
+                    // Generar archivo
+                    const fecha = new Date().toLocaleDateString('es-ES').replace(/\//g, '-');
+                    XLSX.writeFile(newWorkbook, `Notebooks BDC ${fecha}.xlsx`);
+                };
+                
+                reader.readAsArrayBuffer(file);
+            });
+        });
+    </script>
+</body>
+</html> 
