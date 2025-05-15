@@ -442,8 +442,8 @@
                         console.log(`Fila ${idx}: ${detalle}`);
                     }
 
-                    // Desplazamiento real de los datos en las filas
-                    const OFFSET = 2;
+                    // Guardar el header limpio (sin offset)
+                    const headerLimpio = jsonData[headerRow].map(h => h && h.toLowerCase().trim());
 
                     for (let i = headerRow + 1; i < jsonData.length; i++) {
                         let row = jsonData[i];
@@ -451,44 +451,39 @@
                         if (!row || row.length === 0) continue;
 
                         // Recortar los dos primeros elementos para alinear con el header
-                        const dataRow = row.slice(2);
+                        const dataRow = row.slice(0, headerLimpio.length);
+                        // Mapear la fila a un objeto por nombre de columna
+                        const rowObj = {};
+                        headerLimpio.forEach((col, idx) => { rowObj[col] = dataRow[idx]; });
 
-                        // Detectar fila combinada avanzada sobre dataRow
-                        if (esFilaCombinadaAvanzada(dataRow)) {
-                            familiaActual = dataRow[2];
+                        // Detectar fila combinada avanzada sobre rowObj
+                        if (esFilaCombinadaAvanzada(Object.values(rowObj))) {
+                            familiaActual = rowObj['sku'];
                             console.log(`Fila combinada detectada en fila ${i}. familiaActual = ${familiaActual}`);
                             continue;
                         }
 
                         // Solo incluir filas que tengan precio y una familia válida
-                        const idxPrice = colMap.price;
-                        if (dataRow[idxPrice] && familiaActual) {
+                        if (rowObj['price'] && familiaActual) {
                             console.log(`Fila de producto válida en fila ${i}. familiaActual = ${familiaActual}`);
-                            const idxSKU = colMap.sku;
-                            const idxMarca = colMap.marca;
-                            const idxDescripcion = colMap.descripcion;
-                            const idxQty = colMap.qty;
-                            const idxETA = colMap.eta;
-                            const idxMOQ = colMap.moq;
-
-                            const descripcion = dataRow[idxDescripcion] || '';
+                            const descripcion = rowObj['descripcion'] || rowObj['descripción'] || '';
                             const pantalla = extraerPantalla(descripcion);
                             const memoria = extraerValor(descripcion, MEMORIAS);
                             const disco = extraerValor(descripcion, DISCOS);
-                            const precio = parseFloat(dataRow[idxPrice]) * (1 + margen / 100);
+                            const precio = parseFloat(rowObj['price']) * (1 + margen / 100);
 
                             const newRow = newSheet.addRow([
-                                dataRow[idxSKU] || '-',
-                                dataRow[idxMarca] || '',
+                                rowObj['sku'] || '-',
+                                rowObj['marca'] || '',
                                 descripcion,
                                 familiaActual,
                                 pantalla,
                                 memoria,
                                 disco,
-                                dataRow[idxQty] || '',
+                                rowObj['qty'] || '',
                                 `$${formatearPrecio(precio)}`,
-                                dataRow[idxETA] || '',
-                                dataRow[idxMOQ] !== undefined ? dataRow[idxMOQ] : ''
+                                rowObj['eta'] || '',
+                                rowObj['moq'] !== undefined ? rowObj['moq'] : ''
                             ]);
 
                             // Aplicar estilos específicos a cada columna
@@ -512,9 +507,9 @@
                             });
                         } else {
                             if (!familiaActual) {
-                                console.log('Fila de producto ignorada por no tener familiaActual:', dataRow);
-                            } else if (!dataRow[idxPrice]) {
-                                console.log('Fila ignorada por no tener precio:', dataRow);
+                                console.log('Fila de producto ignorada por no tener familiaActual:', rowObj);
+                            } else if (!rowObj['price']) {
+                                console.log('Fila ignorada por no tener precio:', rowObj);
                             }
                         }
                     }
