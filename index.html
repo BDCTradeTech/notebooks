@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Procesador de Archivos Excel de BDC</title>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
         * {
             margin: 0;
@@ -502,7 +503,7 @@
                             if ([1, 4, 5, 6, 7, 8, 10, 11].includes(colNumber)) {
                                 cell.style = centerStyle;
                             } else if (colNumber === 9) {
-                                cell.style = priceStyle;
+                                cell.style = { ...priceStyle, font: { ...priceStyle.font, bold: true } };
                             } else if (colNumber === 3) {
                                 cell.style = descriptionStyle;
                             } else if (colNumber === 2) {
