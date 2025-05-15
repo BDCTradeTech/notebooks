@@ -415,14 +415,27 @@
                         const row = jsonData[i];
                         if (!row || row.length === 0) continue;
 
-                        // Si es una fila combinada, actualizar familiaActual y NO incluirla
-                        if (esFilaCombinada(row)) {
+                        // Detectar fila combinada: solo valor en columna B, sin precio, y el resto vacío o nulo
+                        let esCombinada = false;
+                        if (row[1] && (!row[colMap.price] || row[colMap.price] === '')) {
+                            let restoVacio = true;
+                            for (let j = 0; j < row.length; j++) {
+                                if (j !== 1 && row[j] && String(row[j]).trim() !== '') {
+                                    restoVacio = false;
+                                    break;
+                                }
+                            }
+                            if (restoVacio) esCombinada = true;
+                        }
+
+                        // Si es fila combinada, actualizar familiaActual y NO incluirla
+                        if (esCombinada) {
                             familiaActual = row[1];
                             continue;
                         }
 
-                        // Solo incluir filas que tengan precio
-                        if (row[colMap.price]) {
+                        // Solo incluir filas que tengan precio y una familia válida
+                        if (row[colMap.price] && familiaActual) {
                             const descripcion = row[colMap.descripcion] || '';
                             const pantalla = extraerPantalla(descripcion);
                             const memoria = extraerValor(descripcion, MEMORIAS);
@@ -433,7 +446,7 @@
                                 row[colMap.sku] || '-',
                                 row[colMap.marca] || '',
                                 descripcion,
-                                familiaActual || '-',
+                                familiaActual,
                                 pantalla,
                                 memoria,
                                 disco,
