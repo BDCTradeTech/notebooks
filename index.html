@@ -411,38 +411,51 @@
                     // Procesar datos
                     let familiaActual = null;
 
-                    console.log('colMap:', colMap);
+                    function logFilaDetallada(idx, row) {
+                        let detalle = '';
+                        if (row) {
+                            for (let j = 0; j < row.length; j++) {
+                                detalle += `[${j}]:${JSON.stringify(row[j])} `;
+                            }
+                        }
+                        console.log(`Fila ${idx}: ${detalle}`);
+                    }
+
                     for (let i = headerRow + 1; i < jsonData.length; i++) {
                         const row = jsonData[i];
-                        console.log(`Fila ${i}:`, row);
+                        logFilaDetallada(i, row);
                         if (!row || row.length === 0) continue;
 
                         // Detectar fila combinada: solo valor en columna B, sin precio, y el resto vacío o nulo
                         let esCombinada = false;
-                        if (row[1] && (!row[colMap.price] || row[colMap.price] === '')) {
-                            let restoVacio = true;
-                            for (let j = 0; j < row.length; j++) {
-                                if (j !== 1 && row[j] && String(row[j]).trim() !== '') {
-                                    restoVacio = false;
-                                    break;
-                                }
+                        // Buscar el índice real de la columna Price
+                        const idxPrice = colMap.price;
+                        const idxB = 1;
+                        const tieneB = row[idxB] && typeof row[idxB] === 'string' && row[idxB].trim() !== '';
+                        const sinPrecio = !row[idxPrice] || row[idxPrice] === '';
+                        let restoVacio = true;
+                        for (let j = 0; j < row.length; j++) {
+                            if (j !== idxB && row[j] && String(row[j]).trim() !== '') {
+                                restoVacio = false;
+                                break;
                             }
-                            if (restoVacio) esCombinada = true;
                         }
+                        if (tieneB && sinPrecio && restoVacio) esCombinada = true;
+
                         if (esCombinada) {
-                            familiaActual = row[1];
-                            console.log(`Fila combinada detectada. familiaActual = ${familiaActual}`);
+                            familiaActual = row[idxB];
+                            console.log(`Fila combinada detectada en fila ${i}. familiaActual = ${familiaActual}`);
                             continue;
                         }
 
                         // Solo incluir filas que tengan precio y una familia válida
-                        if (row[colMap.price] && familiaActual) {
-                            console.log(`Fila de producto válida. familiaActual = ${familiaActual}`);
+                        if (row[idxPrice] && familiaActual) {
+                            console.log(`Fila de producto válida en fila ${i}. familiaActual = ${familiaActual}`);
                             const descripcion = row[colMap.descripcion] || '';
                             const pantalla = extraerPantalla(descripcion);
                             const memoria = extraerValor(descripcion, MEMORIAS);
                             const disco = extraerValor(descripcion, DISCOS);
-                            const precio = parseFloat(row[colMap.price]) * (1 + margen / 100);
+                            const precio = parseFloat(row[idxPrice]) * (1 + margen / 100);
 
                             const newRow = newSheet.addRow([
                                 row[colMap.sku] || '-',
@@ -480,7 +493,7 @@
                         } else {
                             if (!familiaActual) {
                                 console.log('Fila de producto ignorada por no tener familiaActual:', row);
-                            } else if (!row[colMap.price]) {
+                            } else if (!row[idxPrice]) {
                                 console.log('Fila ignorada por no tener precio:', row);
                             }
                         }
