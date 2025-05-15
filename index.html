@@ -201,6 +201,7 @@
         }
 
         function extraerPantalla(descripcion) {
+            descripcion = String(descripcion || '');
             // Primero buscar en los patrones definidos
             for (let [pattern, value] of PANTALLAS) {
                 if (descripcion.includes(pattern)) {
@@ -227,6 +228,7 @@
         }
 
         function extraerValor(descripcion, opciones, defaultVal = '-') {
+            descripcion = String(descripcion || '');
             if (opciones === MEMORIAS) {
                 let maxMemoria = null;
                 let maxSize = 0;
