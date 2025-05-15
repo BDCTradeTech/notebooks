@@ -481,7 +481,7 @@
                                 memoria,
                                 disco,
                                 rowObj['qty'] || '',
-                                `$${formatearPrecio(precio)}`,
+                                precio, // Guardar como número
                                 rowObj['eta'] || '',
                                 rowObj['moq'] !== undefined ? rowObj['moq'] : ''
                             ]);
@@ -517,7 +517,7 @@
                     // Ajustar ancho de columnas
                     newSheet.getColumn(1).width = 21;  // SKU
                     newSheet.getColumn(2).width = 11;  // Marca
-                    newSheet.getColumn(3).width = 90;  // Descripción
+                    newSheet.getColumn(3).width = 127; // Descripción
                     newSheet.getColumn(4).width = 20;  // Familia
                     newSheet.getColumn(5).width = 11;  // Pantalla
                     newSheet.getColumn(6).width = 11;  // Memoria
@@ -526,6 +526,9 @@
                     newSheet.getColumn(9).width = 11;  // Precio
                     newSheet.getColumn(10).width = 11; // ETA
                     newSheet.getColumn(11).width = 11; // MOQ
+
+                    // Formato numérico para la columna Precio
+                    newSheet.getColumn(9).numFmt = '#,##0.00';
 
                     // Forzar el ancho de las columnas
                     newSheet.columns.forEach(column => {
