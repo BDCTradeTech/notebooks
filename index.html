@@ -178,7 +178,19 @@
         let colMap = null;
 
         function esFilaCombinada(row) {
-            return row && row.length > 1 && row[1] && !row[colMap.price];
+            // Fila combinada: valor en columna B, sin valor en Price, y el resto vacío o nulo
+            if (!row) return false;
+            const tieneB = row[1] && typeof row[1] === 'string' && row[1].trim() !== '';
+            const sinPrecio = !row[colMap.price] || row[colMap.price] === '';
+            // Consideramos fila combinada si solo hay valor en B y el resto vacío o nulo
+            let restoVacio = true;
+            for (let j = 0; j < row.length; j++) {
+                if (j !== 1 && row[j] && String(row[j]).trim() !== '') {
+                    restoVacio = false;
+                    break;
+                }
+            }
+            return tieneB && sinPrecio && restoVacio;
         }
 
         function formatearPrecio(precio) {
@@ -403,8 +415,8 @@
                         const row = jsonData[i];
                         if (!row || row.length === 0) continue;
 
-                        // Si es una fila combinada (solo valor en columna B y sin precio), actualizar familiaActual y NO incluirla
-                        if (row[1] && (!row[colMap.price] || row[colMap.price] === '')) {
+                        // Si es una fila combinada, actualizar familiaActual y NO incluirla
+                        if (esFilaCombinada(row)) {
                             familiaActual = row[1];
                             continue;
                         }
