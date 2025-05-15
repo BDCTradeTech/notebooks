@@ -421,16 +421,18 @@
                         console.log(`Fila ${idx}: ${detalle}`);
                     }
 
+                    // Desplazamiento real de los datos en las filas
+                    const OFFSET = 2;
+
                     for (let i = headerRow + 1; i < jsonData.length; i++) {
                         const row = jsonData[i];
                         logFilaDetallada(i, row);
                         if (!row || row.length === 0) continue;
 
-                        // Detectar fila combinada: solo valor en columna B, sin precio, y el resto vacío o nulo
+                        // Detectar fila combinada: solo valor en columna B (con offset), sin precio, y el resto vacío o nulo
                         let esCombinada = false;
-                        // Buscar el índice real de la columna Price
-                        const idxPrice = colMap.price;
-                        const idxB = 1;
+                        const idxB = 1 + OFFSET; // Columna B real
+                        const idxPrice = colMap.price + OFFSET;
                         const tieneB = row[idxB] && typeof row[idxB] === 'string' && row[idxB].trim() !== '';
                         const sinPrecio = !row[idxPrice] || row[idxPrice] === '';
                         let restoVacio = true;
@@ -451,24 +453,31 @@
                         // Solo incluir filas que tengan precio y una familia válida
                         if (row[idxPrice] && familiaActual) {
                             console.log(`Fila de producto válida en fila ${i}. familiaActual = ${familiaActual}`);
-                            const descripcion = row[colMap.descripcion] || '';
+                            const idxSKU = colMap.sku + OFFSET;
+                            const idxMarca = colMap.marca + OFFSET;
+                            const idxDescripcion = colMap.descripcion + OFFSET;
+                            const idxQty = colMap.qty + OFFSET;
+                            const idxETA = colMap.eta + OFFSET;
+                            const idxMOQ = colMap.moq + OFFSET;
+
+                            const descripcion = row[idxDescripcion] || '';
                             const pantalla = extraerPantalla(descripcion);
                             const memoria = extraerValor(descripcion, MEMORIAS);
                             const disco = extraerValor(descripcion, DISCOS);
                             const precio = parseFloat(row[idxPrice]) * (1 + margen / 100);
 
                             const newRow = newSheet.addRow([
-                                row[colMap.sku] || '-',
-                                row[colMap.marca] || '',
+                                row[idxSKU] || '-',
+                                row[idxMarca] || '',
                                 descripcion,
                                 familiaActual,
                                 pantalla,
                                 memoria,
                                 disco,
-                                row[colMap.qty] || '',
+                                row[idxQty] || '',
                                 `$${formatearPrecio(precio)}`,
-                                row[colMap.eta] || '',
-                                row[colMap.moq] !== undefined ? row[colMap.moq] : ''
+                                row[idxETA] || '',
+                                row[idxMOQ] !== undefined ? row[idxMOQ] : ''
                             ]);
 
                             // Aplicar estilos específicos a cada columna
